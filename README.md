@@ -28,7 +28,7 @@ use Reven\DBAL\Configuration\Dsn;
 use Reven\DBAL\Configuration\Configuration;
 
 $dsn = new Dsn('pgsql', 'my_db', 'localhost', 5432);
-$config = new \Reven\DBAL\Configuration\Configuration($dsn, 'username', 'passwd');
+$config = new Configuration($dsn, 'username', 'passwd');
 ```
 ### Getting connection and DBAL instance
 ```php
