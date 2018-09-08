@@ -1,0 +1,30 @@
+{
+  "name": "dawidgorecki/dbal",
+  "type": "library",
+  "description": "",
+  "keywords": [],
+  "homepage": "https://github.com/dawidgorecki/dbal-php",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dawid Górecki",
+      "homepage": "https://github.com/dawidgorecki",
+      "role": "Developer"
+    }
+  ],
+
+  "require": {
+    "php": ">=7.1.0",
+    "ext-pdo": "*"
+  },
+
+  "config": {
+    "bin-dir": "bin"
+  },
+
+  "autoload": {
+    "psr-4": {
+      "Reven\\DBAL\\": "src/"
+    }
+  }
+}
