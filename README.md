@@ -14,11 +14,11 @@ Database Abstraction Library for PHP. It based on PDO extension.
 
 Installation via Composer is the recommended way to install. Add this line to your composer.json file:
 ```json
-"dawidgorecki/dbal-php": "~1.0"
+"dawidgorecki/dbal": "~1.0"
 ```
 or run
 ```json
-composer require dawidgorecki/dbal-php
+composer require dawidgorecki/dbal
 ```
 ## Usage
 
