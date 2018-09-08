@@ -14,11 +14,11 @@ Database Abstraction Library for PHP. It based on PDO extension.
 
 Installation via Composer is the recommended way to install. Add this line to your composer.json file:
 ```
-"dawidgorecki/dbal-php": "~1.0"
+"dawidgorecki/dbal": "~1.0"
 ```
 or run
 ```
-composer require dawidgorecki/dbal-php
+composer require dawidgorecki/dbal
 ```
 ## Usage
 
@@ -28,7 +28,7 @@ use Reven\DBAL\Configuration\Dsn;
 use Reven\DBAL\Configuration\Configuration;
 
 $dsn = new Dsn('pgsql', 'my_db', 'localhost', 5432);
-$config = new \Reven\DBAL\Configuration\Configuration($dsn, 'username', 'passwd');
+$config = new Configuration($dsn, 'username', 'passwd');
 ```
 ### Getting connection and DBAL instance
 ```php
@@ -207,7 +207,6 @@ Return ID of the last inserted row
 ```php
 $last_id = $dbal->lastId();
 ```
-
 ## License
 
 Licensed under the MIT license. (http://opensource.org/licenses/MIT)
