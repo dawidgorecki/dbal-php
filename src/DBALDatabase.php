@@ -245,21 +245,23 @@ class DBALDatabase
         $pairs = [];
 
         foreach ($params as $key => $value) {
-            $pairs[] = $key . '=?';
+            array_push($pairs, $key . '=?');
         }
 
         $column_name = array_keys($condition)[0];
+        $values = array_values($params);
+        array_push($values, $condition[$column_name]);
+
         $sql = 'UPDATE ' . $table_name . ' SET ' . implode(',', $pairs) . ' WHERE ' . $column_name . '=?';
 
         try {
             $pdo_stmt = $this->getPDO()->prepare($sql);
-            $pdo_stmt->execute(array_values(array_merge($params, $condition)));
+            $pdo_stmt->execute($values);
             return $pdo_stmt->rowCount();
         } catch (PDOException $ex) {
             throw new DBALException('Database error', $ex, $sql);
         }
     }
-
 
     /**
      * Quotes a string for use in a query
