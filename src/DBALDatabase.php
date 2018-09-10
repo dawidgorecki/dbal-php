@@ -340,9 +340,14 @@ class DBALDatabase
      * Return ID of the last inserted row
      *
      * @return string
+     * @throws DBALException
      */
     public function lastId(): string
     {
-        return $this->getPDO()->lastInsertId();
+        try {
+            return $this->getPDO()->lastInsertId();
+        } catch (PDOException $ex) {
+            throw new DBALException('Cannot get id, lastval is not yet defined', $ex);
+        }
     }
 }
