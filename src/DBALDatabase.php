@@ -89,10 +89,10 @@ class DBALDatabase
      * @param string $query
      * @param array $params
      * @param int|null $fetch_mode
-     * @return array
+     * @return mixed
      * @throws DBALException On failure
      */
-    public function fetchAll(string $query, array $params = [], int $fetch_mode = null): array
+    public function fetchAll(string $query, array $params = [], int $fetch_mode = null)
     {
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
@@ -110,10 +110,10 @@ class DBALDatabase
      * @param string $query
      * @param array $params
      * @param int|null $fetch_mode
-     * @return array
+     * @return mixed
      * @throws DBALException On failure
      */
-    public function fetchFirst(string $query, array $params = [], int $fetch_mode = null): array
+    public function fetchFirst(string $query, array $params = [], int $fetch_mode = null)
     {
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
