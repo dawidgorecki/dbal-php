@@ -61,7 +61,7 @@ Rolls back the current transaction
 $dbal->rollback();
 ```
 #### fetchAll()
-Returns an array containing all of the result set rows
+Returns all rows of the query result
 ```php
 $users = $dbal->fetchAll("SELECT * FROM users");
     
@@ -106,7 +106,7 @@ Array
 */
 ```
 #### fetchAssoc()
-Return first row of the query result as associative array
+Returns first row of the query result as associative array
 ```php
 $user = $dbal->fetchAssoc("SELECT * FROM users WHERE name = ?", ["Dawid"]);
     
@@ -201,7 +201,6 @@ Quotes a string for use in a query
 ```php
 $quoted = $dbal->quote("Hello", PDO::PARAM_STR);
 ```
-
 #### lastId()
 Return ID of the last inserted row
 ```php
