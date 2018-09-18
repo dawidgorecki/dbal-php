@@ -10,7 +10,7 @@ class Configuration
 {
 
     /**
-     * @var Dsn $dsn
+     * @var DSN $dsn
      */
     private $dsn;
 
@@ -35,14 +35,14 @@ class Configuration
     private $persistent;
 
     /**
-     * @param Dsn $dsn
+     * @param DSN $dsn
      * @param string $username
      * @param string $password
      * @param string $charset
      * @param bool $persistent
      */
     public function __construct(
-        Dsn $dsn,
+        DSN $dsn,
         string $username,
         string $password,
         string $charset = 'utf8',
@@ -56,9 +56,9 @@ class Configuration
     }
 
     /**
-     * @return Dsn
+     * @return DSN
      */
-    public function getDsn(): Dsn
+    public function getDsn(): DSN
     {
         return $this->dsn;
     }
