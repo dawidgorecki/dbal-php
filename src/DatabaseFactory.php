@@ -4,77 +4,53 @@ namespace Reven\DBAL;
 
 use PDO;
 use PDOException;
-use Reven\DBAL\Configuration\Configuration;
+use Reven\DBAL\Configuration\DBConfig;
+use Reven\DBAL\Configuration\DSN;
 use Reven\DBAL\Exceptions\DBALException;
 
 /**
  * Class DatabaseFactory
  * @package Reven\DBAL
  */
-class DatabaseFactory
+class DatabaseFactory implements DatabaseFactoryInterface
 {
 
-    const FETCH_MODE = PDO::FETCH_ASSOC;
     const ERROR_MODE = PDO::ERRMODE_EXCEPTION;
 
     /**
-     * @var DatabaseFactory $instance
-     */
-    private static $instance;
-
-    /**
-     * @var PDO $pdo
-     */
-    private $pdo;
-
-    private function __construct() {}
-    private function __clone() {}
-
-    /**
-     * @return DatabaseFactory
-     */
-    public static function getInstance(): DatabaseFactory
-    {
-        if (\is_null(self::$instance)) {
-            self::$instance = new DatabaseFactory();
-        }
-
-        return self::$instance;
-    }
-
-    /**
-     * @param Configuration $config
+     * Creates and return a PDO instance representing a connection to a database
+     *
+     * @param DBConfig $config
+     * @param int $fetch_mode
      * @return PDO
      * @throws DBALException
      */
-    public function getConnection(Configuration $config): PDO
+    public static function getConnection(DBConfig $config, int $fetch_mode = PDO::FETCH_ASSOC): PDO
     {
-        if (\is_null($this->pdo)) {
-            $options = [
-                PDO::ATTR_PERSISTENT => $config->isPersistent(),
-                PDO::ATTR_ERRMODE => self::ERROR_MODE,
-                PDO::ATTR_DEFAULT_FETCH_MODE => self::FETCH_MODE
-            ];
+        $options = [
+            PDO::ATTR_PERSISTENT => $config->isPersistent(),
+            PDO::ATTR_ERRMODE => self::ERROR_MODE,
+            PDO::ATTR_DEFAULT_FETCH_MODE => $fetch_mode
+        ];
 
-            try {
-                $this->pdo = new PDO($config->getDsn(), $config->getUsername(), $config->getPassword(), $options);
+        try {
+            $conn = new PDO($config->getDsn(), $config->getUsername(), $config->getPassword(), $options);
 
-                switch ($config->getDsn()->getDriver()) {
-                    case 'mysql':
-                        $this->pdo->exec("SET NAMES " . $config->getCharset());
-                        break;
+            switch ($config->getDsn()->getDriver()) {
+                case DSN::DRIVER_MYSQL:
+                    $conn->exec("SET NAMES " . $config->getCharset());
+                    break;
 
-                    case 'pgsql':
-                        $this->pdo->exec("SET client_encoding='" . $config->getCharset() . "';");
-                        $this->pdo->exec("SET datestyle='DMY';");
-                        break;
-                }
-            } catch (PDOException $ex) {
-                throw new DBALException('Connection error', $ex);
+                case DSN::DRIVER_PGSQL:
+                    $conn->exec("SET client_encoding='" . $config->getCharset() . "';");
+                    $conn->exec("SET datestyle='DMY';");
+                    break;
             }
+        } catch (PDOException $ex) {
+            throw new DBALException('Database connection error', $ex);
         }
 
-        return $this->pdo;
+        return $conn;
     }
 
 }

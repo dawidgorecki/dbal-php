@@ -5,12 +5,16 @@ namespace Reven\DBAL\Configuration;
 use Reven\DBAL\Exceptions\DriverException;
 
 /**
- * Class Dsn
+ * Class DSN
  * @package Reven\DBAL\Configuration
  */
-class Dsn
+class DSN
 {
 
+    const DRIVER_MYSQL = 'mysql';
+    const DRIVER_PGSQL = 'pgsql';
+    const PORT_MYSQL = 3306;
+    const PORT_PGSQL = 5432;
     const SUPPORTED_DRIVERS = ['mysql', 'pgsql'];
 
     /**
@@ -40,10 +44,21 @@ class Dsn
      * @param int $port
      * @throws DriverException
      */
-    public function __construct(string $driver, string $db_name, string $host, int $port)
+    public function __construct(string $driver, string $db_name, string $host = 'localhost', int $port = 0)
     {
         if (!\in_array($driver, self::SUPPORTED_DRIVERS, true)) {
             throw new DriverException('Driver is not supported');
+        }
+
+        if ($port == 0) {
+            switch ($driver) {
+                case self::DRIVER_MYSQL:
+                    $port = self::PORT_MYSQL;
+                    break;
+                case self::DRIVER_PGSQL:
+                    $port = self::PORT_PGSQL;
+                    break;
+            }
         }
 
         $this->driver = $driver;

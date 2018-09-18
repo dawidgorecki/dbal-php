@@ -5,7 +5,6 @@
 Database Abstraction Library for PHP. It based on PDO extension.
 
 ## Requirements
-
 - PHP 7.1.0+
 - PDO driver
 - Enabled extensions: pdo_pgsql and/or pdo_mysql
@@ -24,19 +23,46 @@ composer require dawidgorecki/dbal
 
 ### Configuration
 ```php
-use Reven\DBAL\Configuration\Dsn;
-use Reven\DBAL\Configuration\Configuration;
+use Reven\DBAL\Configuration\DBConfig;
+use Reven\DBAL\Configuration\DSN;
 
-$dsn = new Dsn('pgsql', 'my_db', 'localhost', 5432);
-$config = new Configuration($dsn, 'username', 'passwd');
+$dsn = new DSN(DSN::DRIVER_PGSQL, 'my_db');
+// $dsn = new DSN(DSN::DRIVER_MYSQL, 'my_db', 'localhost', DSN::PORT_MYSQL);
+
+$config = new DBConfig($dsn, 'username', 'passwd');
+// $config = new DBConfig($dsn, 'username', 'passwd', 'utf8', true);
 ```
 ### Getting connection and DBAL instance
+1. Using Connection Manager
+```php
+use Reven\DBAL\ConnectionManager;
+use Reven\DBAL\DBALDatabase;
+use Reven\DBAL\Exceptions\DBALException;
+
+try {
+    ConnectionManager::createConnection($config);
+    // ConnectionManager::createConnection($config1, 'db1', PDO::FETCH_ASSOC);
+    // ConnectionManager::createConnection($config2, 'db2', PDO::FETCH_OBJ);
+} catch (DBALException $e) {
+    die($e);
+}
+
+$dbal = new DBALDatabase(ConnectionManager::getConnection());
+// $dbal = new DBALDatabase(ConnectionManager::getConnection('db1'));
+```
+2. Using Database Factory
 ```php
 use Reven\DBAL\DatabaseFactory;
 use Reven\DBAL\DBALDatabase;
+use Reven\DBAL\Exceptions\DBALException;
 
-$conn = DatabaseFactory::getInstance()->getConnection($config);
-$dbal = new DBALDatabase($conn);
+try {
+    $pdo = DatabaseFactory::getConnection($config, PDO::FETCH_ASSOC);
+} catch (DBALException $e) {
+    die($e);
+}
+
+$dbal = new DBALDatabase($pdo);
 ```
 ## API
 
