@@ -3,10 +3,10 @@
 namespace Reven\DBAL\Configuration;
 
 /**
- * Class Configuration
+ * Class DBConfig
  * @package Reven\DBAL\Configuration
  */
-class Configuration
+class DBConfig
 {
 
     /**

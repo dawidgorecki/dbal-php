@@ -5,7 +5,7 @@ namespace Reven\DBAL\Configuration;
 use Reven\DBAL\Exceptions\DriverException;
 
 /**
- * Class Dsn
+ * Class DSN
  * @package Reven\DBAL\Configuration
  */
 class DSN
