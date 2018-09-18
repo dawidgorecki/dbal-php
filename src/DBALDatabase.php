@@ -15,16 +15,34 @@ class DBALDatabase
 {
 
     /**
+     * @var bool $exceptions
+     */
+    protected $exceptions;
+
+    /**
+     * @var string $last_error
+     */
+    protected $last_error;
+
+    /**
+     * @var string $query_string
+     */
+    protected $query_string;
+
+    /**
      * @var PDO $pdo
      */
     protected $pdo;
 
     /**
+     * DBALDatabase constructor.
      * @param PDO $pdo
+     * @param bool $exceptions
      */
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, bool $exceptions = true)
     {
         $this->pdo = $pdo;
+        $this->exceptions = $exceptions;
     }
 
     /**
@@ -35,6 +53,26 @@ class DBALDatabase
     public function getPDO(): PDO
     {
         return $this->pdo;
+    }
+
+    /**
+     * Returns last error message
+     *
+     * @return string
+     */
+    public function getLastError(): string
+    {
+        return $this->last_error ?? '';
+    }
+
+    /**
+     * Returns query used in the last SQL statement
+     *
+     * @return string
+     */
+    public function getQueryString(): string
+    {
+        return $this->query_string ?? '';
     }
 
     /**
@@ -49,7 +87,13 @@ class DBALDatabase
         try {
             return $this->getPDO()->beginTransaction();
         } catch (PDOException $ex) {
-            throw new DBALException('Transaction error', $ex);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Transaction error', $ex);
+            }
+
+            return false;
         }
     }
 
@@ -64,7 +108,13 @@ class DBALDatabase
         try {
             return $this->getPDO()->commit();
         } catch (PDOException $ex) {
-            throw new DBALException('Transaction error', $ex);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Transaction error', $ex);
+            }
+
+            return false;
         }
     }
 
@@ -79,7 +129,13 @@ class DBALDatabase
         try {
             return $this->getPDO()->rollBack();
         } catch (PDOException $ex) {
-            throw new DBALException('Transaction error', $ex);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Transaction error', $ex);
+            }
+
+            return false;
         }
     }
 
@@ -94,13 +150,20 @@ class DBALDatabase
      */
     public function fetchAll(string $query, array $params = [], int $fetch_mode = null)
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
-
             return $pdo_stmt->fetchAll($fetch_mode);
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return false;
         }
     }
 
@@ -115,13 +178,20 @@ class DBALDatabase
      */
     public function fetchFirst(string $query, array $params = [], int $fetch_mode = null)
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
-
             return $pdo_stmt->fetch($fetch_mode);
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return false;
         }
     }
 
@@ -135,13 +205,21 @@ class DBALDatabase
      */
     public function fetchArray(string $query, array $params = []): array
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
-
-            return $pdo_stmt->fetch(PDO::FETCH_NUM);
+            $row = $pdo_stmt->fetch(PDO::FETCH_NUM);
+            return (!$row) ? [] : $row;
         } catch (PDOException $ex) {
-            throw new DBALException('DBALDatabase error', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return [];
         }
     }
 
@@ -155,13 +233,21 @@ class DBALDatabase
      */
     public function fetchAssoc(string $query, array $params = []): array
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
-
-            return $pdo_stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $pdo_stmt->fetch(PDO::FETCH_ASSOC);
+            return (!$row) ? [] : $row;
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return [];
         }
     }
 
@@ -171,18 +257,27 @@ class DBALDatabase
      * @param string $query
      * @param array $params
      * @param int $column_number
-     * @return null|string
+     * @return string
      * @throws DBALException On failure
      */
     public function fetchColumn(string $query, array $params = [], int $column_number = 0): string
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
 
-            return $pdo_stmt->fetchColumn($column_number);
+            $col = $pdo_stmt->fetchColumn($column_number);
+            return (!$col) ? '': $col;
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return '';
         }
     }
 
@@ -204,7 +299,13 @@ class DBALDatabase
             $pdo_stmt->execute([$condition[$column_name]]);
             return $pdo_stmt->rowCount();
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $sql);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Row(s) cannot be deleted', $ex, $sql);
+            }
+
+            return 0;
         }
     }
 
@@ -222,12 +323,20 @@ class DBALDatabase
         $sql = 'INSERT INTO ' . $table_name . '(' . implode(',', array_keys($params)) . ') ';
         $sql .= 'VALUES(' . $placeholders . ')';
 
+        $this->query_string = $sql;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($sql);
             $pdo_stmt->execute(array_values($params));
             return ($pdo_stmt->rowCount() > 0);
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $sql);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Row cannot be inserted', $ex, $sql);
+            }
+
+            return false;
         }
     }
 
@@ -253,13 +362,20 @@ class DBALDatabase
         array_push($values, $condition[$column_name]);
 
         $sql = 'UPDATE ' . $table_name . ' SET ' . implode(',', $pairs) . ' WHERE ' . $column_name . '=?';
+        $this->query_string = $sql;
 
         try {
             $pdo_stmt = $this->getPDO()->prepare($sql);
             $pdo_stmt->execute($values);
             return $pdo_stmt->rowCount();
         } catch (PDOException $ex) {
-            throw new DBALException('Database error', $ex, $sql);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Row(s) cannot be updated', $ex, $sql);
+            }
+
+            return 0;
         }
     }
 
@@ -276,10 +392,14 @@ class DBALDatabase
         $quoted = $this->getPDO()->quote($string, $parameter_type);
 
         if ($quoted === false) {
-            throw new DBALException('Driver does not support quoting');
+            $this->last_error = "Driver does not support quoting";
+
+            if ($this->exceptions) {
+                throw new DBALException('Driver does not support quoting');
+            }
         }
 
-        return $quoted;
+        return $quoted ? $quoted : '';
     }
 
     /**
@@ -287,17 +407,25 @@ class DBALDatabase
      *
      * @param string $query
      * @param array $params
-     * @return PDOStatement
+     * @return null|PDOStatement
      * @throws DBALException
      */
-    public function executeQuery(string $query, array $params = []): PDOStatement
+    public function executeQuery(string $query, array $params = []): ?PDOStatement
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
             return $pdo_stmt;
         } catch (PDOException $ex) {
-            throw new DBALException('Cannot execute query', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return null;
         }
     }
 
@@ -311,30 +439,45 @@ class DBALDatabase
      */
     public function updateQuery(string $query, array $params = []): int
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             $pdo_stmt->execute($params);
             return $pdo_stmt->rowCount();
         } catch (PDOException $ex) {
-            throw new DBALException('Cannot execute query', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Query cannot be executed', $ex, $query);
+            }
+
+            return 0;
         }
     }
-
 
     /**
      * Prepare a given SQL statement and return the PDOStatement instance
      *
      * @param string $query
-     * @return PDOStatement
+     * @return null|PDOStatement
      * @throws DBALException
      */
-    public function prepare(string $query): PDOStatement
+    public function prepare(string $query): ?PDOStatement
     {
+        $this->query_string = $query;
+
         try {
             $pdo_stmt = $this->getPDO()->prepare($query);
             return $pdo_stmt;
         } catch (PDOException $ex) {
-            throw new DBALException('Cannot prepare the statement', $ex, $query);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Cannot prepare the statement', $ex, $query);
+            }
+
+            return null;
         }
     }
 
@@ -349,7 +492,14 @@ class DBALDatabase
         try {
             return $this->getPDO()->lastInsertId();
         } catch (PDOException $ex) {
-            throw new DBALException('Cannot get id, lastval is not yet defined', $ex);
+            $this->last_error = $ex->getMessage();
+
+            if ($this->exceptions) {
+                throw new DBALException('Cannot get id, lastval is not yet defined', $ex);
+            }
+
+            return '';
         }
     }
+
 }

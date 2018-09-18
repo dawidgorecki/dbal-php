@@ -13,7 +13,7 @@ Database Abstraction Library for PHP. It based on PDO extension.
 
 Installation via Composer is the recommended way to install. Add this line to your composer.json file:
 ```
-"dawidgorecki/dbal": "~1.0"
+"dawidgorecki/dbal": "~2.0"
 ```
 or run
 ```
@@ -33,7 +33,7 @@ $config = new DBConfig($dsn, 'username', 'passwd');
 // $config = new DBConfig($dsn, 'username', 'passwd', 'utf8', true);
 ```
 ### Getting connection and DBAL instance
-1. Using Connection Manager
+Using Connection Manager:
 ```php
 use Reven\DBAL\ConnectionManager;
 use Reven\DBAL\DBALDatabase;
@@ -50,7 +50,7 @@ try {
 $dbal = new DBALDatabase(ConnectionManager::getConnection());
 // $dbal = new DBALDatabase(ConnectionManager::getConnection('db1'));
 ```
-2. Using Database Factory
+Using Database Factory:
 ```php
 use Reven\DBAL\DatabaseFactory;
 use Reven\DBAL\DBALDatabase;
@@ -63,6 +63,16 @@ try {
 }
 
 $dbal = new DBALDatabase($pdo);
+```
+### Errors & Exceptions
+You can turn off all exceptions thrown by DBALDatabase by setting false as second parameter in object constructor.
+```php
+$dbal = new DBALDatabase($pdo, false);
+```
+Getting error message and query string:
+```php
+$dbal->getLastError();
+$dbal->getQueryString();
 ```
 ## API
 
