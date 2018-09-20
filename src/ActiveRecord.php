@@ -2,6 +2,7 @@
 
 namespace Reven\DBAL;
 
+use Reven\DBAL\Exceptions\DBALException;
 use Reven\DBAL\Utils\ClassUtils;
 use Reven\DBAL\Utils\InflectUtils;
 use Reven\DBAL\Utils\StringUtils;
@@ -14,23 +15,35 @@ abstract class ActiveRecord implements CRUDInterface
 {
 
     /**
-     * @var int $id
-     */
-    protected $id;
-
-    /**
      * @var array $config
      */
     protected static $config = [];
 
     /**
+     * @return int|null
+     */
+    abstract public function getId(): ?int;
+
+    /**
+     * @param int $id
+     */
+    abstract public function setId(int $id): void;
+
+    /**
      * Create and return instance of DBALDatabase
      *
      * @return DBALDatabase
+     * @throws DBALException
      */
     protected static function createDBAL(): DBALDatabase
     {
-        return new DBALDatabase(ConnectionManager::getConnection(self::getConnectionName()));
+        $conn = ConnectionManager::getConnection(self::getConnectionName());
+
+        if (is_null($conn)) {
+            throw new DBALException('Connection "' . self::getConnectionName() . '" does not exists');
+        }
+
+        return new DBALDatabase($conn);
     }
 
     /**
@@ -116,10 +129,45 @@ abstract class ActiveRecord implements CRUDInterface
         $class_name = get_called_class();
 
         if (!isset(self::$config[$class_name]['database'])) {
-            self::$config[$class_name]['database'] = self::createDBAL();
+            try {
+                self::$config[$class_name]['database'] = self::createDBAL();
+            } catch (DBALException $ex) {
+                // TODO: Add better error handling
+                die($ex);
+            }
         }
 
         return self::$config[$class_name]['database'];
+    }
+
+    /**
+     * Return array with object properties
+     *
+     * @param string $types
+     * @param array $skip
+     * @return array
+     */
+    protected function getObjectProperties(string $types = 'private', array $skip = []): array
+    {
+        $properties = ClassUtils::getProperties($this, $types);
+        $result = [];
+
+        foreach ($properties as $propertyName => $reflectionProperty) {
+            /**
+             * @var \ReflectionProperty $reflectionProperty
+             */
+            $reflectionProperty->setAccessible(true);
+            $propertyValue = $reflectionProperty->getValue($this);
+
+            if (in_array($propertyName, $skip)) {
+                continue;
+            }
+
+            $propertyName = StringUtils::convertToUnderscored($propertyName);
+            $result[$propertyName] = $propertyValue;
+        }
+
+        return $result;
     }
 
     /**
@@ -131,7 +179,20 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public static function findByQuery(string $query, array $params = []): array
     {
-        // TODO: Implement findByQuery() method.
+        $objects = [];
+
+        try {
+            $rows = self::getDB()->fetchAll($query, $params);
+        } catch (DBALException $ex) {
+            // TODO: Add better error handling
+            die($ex);
+        }
+
+        foreach ($rows as $row) {
+            $objects[] = self::instantiation($row);
+        }
+
+        return $objects;
     }
 
     /**
@@ -142,7 +203,10 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public static function findById(int $id): ?ActiveRecord
     {
-        // TODO: Implement findById() method.
+        $query = "SELECT * FROM " . self::getTableName() . " WHERE id = :id LIMIT 1";
+        $objects = self::findByQuery($query, [":id" => $id]);
+
+        return !empty($objects) ? $objects[0]: null;
     }
 
     /**
@@ -152,7 +216,7 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public static function findAll(): array
     {
-        // TODO: Implement findAll() method.
+        return self::findByQuery("SELECT * FROM " . self::getTableName());
     }
 
     /**
@@ -162,7 +226,20 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public function create(): bool
     {
-        // TODO: Implement create() method.
+        $db = self::getDB();
+        $properties = $this->getObjectProperties('private', ["id"]);
+
+        try {
+            if ($result = $db->insert(self::getTableName(), $properties)) {
+                $this->setId($db->lastId());
+            }
+
+            return $result;
+
+        } catch (DBALException $ex) {
+            // TODO: Add better error handling
+            die($ex);
+        }
     }
 
     /**
@@ -172,7 +249,20 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public function update(): bool
     {
-        // TODO: Implement update() method.
+        if (is_null($this->getId())) {
+            return false;
+        }
+
+        $properties = $this->getObjectProperties('private', ["id"]);
+
+        try {
+            $affected_rows = self::getDB()->update(self::getTableName(), $properties, ["id" => $this->getId()]);
+        } catch (DBALException $ex) {
+            // TODO: Add better error handling
+            die($ex);
+        }
+
+        return ($affected_rows > 0);
     }
 
     /**
@@ -182,7 +272,18 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public function delete(): bool
     {
-        // TODO: Implement delete() method.
+        if (is_null($this->getId())) {
+            return false;
+        }
+
+        try {
+            $affected_rows = self::getDB()->delete(self::getTableName(), ["id" => $this->getId()]);
+        } catch (DBALException $ex) {
+            // TODO: Add better error handling
+            die($ex);
+        }
+
+        return ($affected_rows > 0);
     }
 
     /**
@@ -192,23 +293,7 @@ abstract class ActiveRecord implements CRUDInterface
      */
     public function save(): bool
     {
-        // TODO: Implement save() method.
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param int $id
-     */
-    public function setId(int $id): void
-    {
-        $this->id = $id;
+        return is_null($this->getId()) ? $this->create() : $this->update();
     }
 
 }

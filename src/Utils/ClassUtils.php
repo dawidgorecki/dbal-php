@@ -37,12 +37,16 @@ class ClassUtils
      * @param $argument
      * @param string $types
      * @return array
-     * @throws \ReflectionException
      */
     public static function getProperties($argument, string $types = 'public'): array
     {
-        $properties = self::getReflectionClass($argument)->getProperties();
         $propertiesArray = [];
+
+        try {
+            $properties = self::getReflectionClass($argument)->getProperties();
+        } catch (\ReflectionException $ex) {
+            return $propertiesArray;
+        }
 
         foreach ($properties as $property) {
             if ($property->isPublic() and (stripos($types, 'public') === false)) continue;
