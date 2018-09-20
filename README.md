@@ -1,8 +1,8 @@
-# DBAL for PHP  
+# DBAL for PHP    
 [![GitHub (pre-)release](https://img.shields.io/github/release/dawidgorecki/dbal-php/all.svg)](https://github.com/dawidgorecki/dbal-php/releases) [![GitHub license](https://img.shields.io/github/license/dawidgorecki/dbal-php.svg)](https://github.com/dawidgorecki/dbal-php/blob/master/LICENSE)
 
 
-Database Abstraction Library for PHP. It based on PDO extension.
+Database Abstraction Library for PHP with ActiveRecord features. It based on PDO extension.
 
 ## Requirements
 - PHP 7.1.0+
@@ -74,7 +74,7 @@ Getting error message and query string:
 $dbal->getLastError();
 $dbal->getQueryString();
 ```
-## API
+## DBAL API
 
 #### getPDO()
 Returns a PDO instance representing a connection to a database
@@ -241,6 +241,80 @@ $quoted = $dbal->quote("Hello", PDO::PARAM_STR);
 Return ID of the last inserted row
 ```php
 $last_id = $dbal->lastId();
+```
+## ActiveRecord
+Model private properties should have the same names as columns in database table.
+### Naming convention
+ * `Database Table` - Plural with underscores separating words (e.g., user_details)
+ * `Model Class` - Singular with the first letter of each word capitalized (e.g., UserDetail)
+### Usage
+Extend your model class with `Reven\DBAL\ActiveRecord`
+```php
+<?php
+
+namespace Reven\DBAL;
+
+class User extends ActiveRecord
+{
+}
+```
+Create database connection
+```php
+ConnectionManager::createConnection($config, 'active_record');
+```
+Set connection name if it's not default  
+```php
+User::setConnectionName('active_record');
+```
+Change default database table (optional)
+```php
+User::setTableName('employers');
+``` 
+### Basic CRUD
+
+#### Create
+To create a new record in database (e.g. add new user) we instantiating a new object and then invoking the save() method.  
+```php
+// INSERT INTO users(name,email) VALUES('John','john@gmail.com')  
+$user = new User();
+$user->setName("John");
+$user->setEmail("john@gmail.com");
+$user->save();
+```
+
+#### Read
+These are your basic methods to find and retrieve records from your database.  
+```php
+// SELECT * FROM users WHERE id=1 LIMIT 1
+$user = User::findById(1);
+echo $user->getName();
+
+// SELECT * FROM users
+$users = User::findAll();
+foreach ($users as $user) {
+    echo $user->getName();
+}
+
+// SELECT * FROM users WHERE email='john@gmail.com'
+$users = User::findByQuery("SELECT * FROM users WHERE email=:email", [":email" => "john@gmail.com"]);
+echo $users[0]->getName();
+```
+
+#### Update
+To update you would just need to find a record first and then change one of attributes.  
+```php
+// UPDATE users SET name='Edwin' WHERE id=1
+$user = User::findById(1);
+$user->setName("Edwin");
+$user->save();
+```
+
+#### Delete
+That will call SQL query to delete the record in your database.  
+```php
+// DELETE FROM users WHERE id=1
+$user = User::findById(1);
+$user->delete();
 ```
 ## License
 
