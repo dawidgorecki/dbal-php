@@ -296,4 +296,37 @@ abstract class ActiveRecord implements CRUDInterface
         return is_null($this->getId()) ? $this->create() : $this->update();
     }
 
+    /**
+     * Return count of values in specified column
+     *
+     * @param string $column_name
+     * @param string $value
+     * @return int
+     */
+    public static function valueCount(string $column_name, string $value): int
+    {
+        $query = "SELECT COUNT(*) FROM " . self::getTableName() . " WHERE " . $column_name . "=:val";
+
+        try {
+            $count = self::getDB()->fetchColumn($query, [":val" => $value], 0);
+        } catch (DBALException $ex) {
+            // TODO: Add better error handling
+            die($ex);
+        }
+
+        return empty($count) ? 0 : $count;
+    }
+
+    /**
+     * Check if value exists in specified column
+     *
+     * @param string $column_name
+     * @param string $value
+     * @return bool
+     */
+    public static function valueExists(string $column_name, string $value): bool
+    {
+        return self::valueCount($column_name, $value) > 0;
+    }
+
 }
