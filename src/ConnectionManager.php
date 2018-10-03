@@ -62,4 +62,27 @@ class ConnectionManager implements ConnectionManagerInterface
         return false;
     }
 
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public static function dropConnection(string $name): bool
+    {
+        if (isset(self::$connections[$name])) {
+            unset(self::$connections[$name]);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public static function connectionExists(string $name): bool
+    {
+        return isset(self::$connections[$name]);
+    }
+
 }
